@@ -1,0 +1,3 @@
+com.pps.web.data.Application__multipart_form_dataHttpBodyResolve
+com.pps.web.data.Application_json_HttpBodyResolve
+com.pps.web.data.Application_xwww_form_urlencoded_HttpBodyResolve
