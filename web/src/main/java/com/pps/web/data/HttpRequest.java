@@ -3,7 +3,6 @@ package com.pps.web.data;
 
 import com.pps.web.Worker;
 import com.pps.web.constant.PpsWebConstant;
-import com.pps.web.exception.ChannelReadEndException;
 import com.pps.web.servlet.entity.PpsInputSteram;
 
 import java.io.InputStream;
@@ -87,73 +86,36 @@ public class HttpRequest {
         int index=0;
         while (true) {
 
-
-
-            try{
                 byte data = (byte) inputStream.read();
-                line[index]=data;
+                if(data!=-1) {
+                    line[index] = data;
 
-                if(data=='\n'&&index!=0&&line[index-1]=='\r'){
+                    if (data == '\n' && index != 0 && line[index - 1] == '\r') {
 
-                    String s = new String(line, 0, index+1, "utf-8");
-                    //如果s==\r\n 那么说明这个就是请求体和请求头的那个分隔标记 下面的字节就是请求体了
-                    if(s.equals("\r\n")){
-                        break;
+                        String s = new String(line, 0, index + 1, "utf-8");
+                        //如果s==\r\n 那么说明这个就是请求体和请求头的那个分隔标记 下面的字节就是请求体了
+                        if (s.equals("\r\n")) {
+                            break;
+                        }
+                        httpReportHead.add(s);
+                        for (int i = 0; i < line.length; i++) {
+                            line[i] = 0;
+                        }
+                        index = 0;
+                        continue;
                     }
-                    httpReportHead.add(s);
-                    for (int i = 0; i < line.length; i++) {
-                        line[i]=0;
+
+                    index++;
+                    //扩容
+                    if (index >= line.length) {
+                        byte[] newLine = new byte[line.length * 2];
+                        System.arraycopy(line, 0, newLine, 0, index);
+                        line = newLine;
                     }
-                    index=0;
-                    continue;
-                }
 
-                index++;
-                //扩容
-                if(index>=line.length){
-                    byte[] newLine=new byte[line.length*2];
-                    System.arraycopy(line,0,newLine,0,index);
-                    line=newLine;
-                }
-
-            }catch (ChannelReadEndException e){
-                break;
-            }
-
-
-      /*      byte data = (byte) inputStream.read();
-            if (data != -1) {
-
-                line[index]=data;
-
-                if(data=='\n'&&index!=0&&line[index-1]=='\r'){
-
-                    String s = new String(line, 0, index+1, "utf-8");
-                    //如果s==\r\n 那么说明这个就是请求体和请求头的那个分隔标记 下面的字节就是请求体了
-                    if(s.equals("\r\n")){
-                        break;
-                    }
-                    httpReportHead.add(s);
-                    for (int i = 0; i < line.length; i++) {
-                        line[i]=0;
-                    }
-                    index=0;
-                    continue;
-                }
-
-                index++;
-                //扩容
-                if(index>=line.length){
-                    byte[] newLine=new byte[line.length*2];
-                    System.arraycopy(line,0,newLine,0,index);
-                    line=newLine;
-                }
-
-            }else {
-                break;
-            }
-            */
-
+                } else {
+                    break;
+                 }
 
 
         }

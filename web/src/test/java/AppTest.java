@@ -20,6 +20,7 @@ public class AppTest {
             @Override
             public void get(HttpRequest request, Response response) {
 
+               // System.out.println(Thread.currentThread().getId()+":  thread");
                 String s="Hello  PPS!";
                 response.writeDirect("<p> "+s+"</p>");
 
@@ -28,8 +29,8 @@ public class AppTest {
         };
         WebServer webServer=new WebServer();
         webServer.setPort(9090);
-        webServer.setBossSize(0);
-        webServer.setWorkerSize(1);
+        webServer.setBossSize(1);
+        webServer.setWorkerSize(2);
         webServer.setContext("/qps");
 
         /**

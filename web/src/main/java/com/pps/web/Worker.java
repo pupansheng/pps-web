@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Pu PanSheng, 2021/12/17
@@ -29,7 +30,17 @@ public class Worker implements Runnable{
 
     private BlockingDeque<Runnable> task;
 
+
     private Executor executor;
+
+    private boolean isExistsBosser;
+
+    protected Worker[] workers;
+
+    protected Worker[] bossers;
+
+    protected AtomicInteger count=new AtomicInteger(0);
+
 
 
     private WebServer webServer;
@@ -43,19 +54,44 @@ public class Worker implements Runnable{
 
         } catch (IOException e) {
             e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
-    void init(WebServer webServer){
+    void init(WebServer webServer,Worker[] workers, Worker[] bossers) {
         this.webServer=webServer;
+        this.workers=workers;
+        this.bossers=bossers;
+        if(this.bossers!=null){
+            isExistsBosser=true;
+        }
     }
 
-
+    /**
+     * 如果该Selector 此时已经被阻塞在select()中了  那么这里会被阻塞住 请注意
+     *
+     * 如果注册的是 socket连接事件   那么如果有bosser 就会从bosser选一个 不然从worker里面选一个
+     * 如果是读写事件  那么就从worker里面选一个
+     * worker>0  bosser=0  那么woker里面就会又承担连接 又承担读写事件监听
+     * worker>0  bosser>0  那么bosser专注连接   worker专注读写
+     * @param selectableChannel
+     * @param type
+     * @throws ClosedChannelException
+     */
     protected void registerEvent(SelectableChannel selectableChannel, int type) throws ClosedChannelException {
-        //如果该Selector 此时已经被阻塞在select()中了  那么这里会被阻塞住 请注意
-        if(selectableChannel.isOpen()) {
-            selectableChannel.register(chooseSelector(), type);
+
+        if(!selectableChannel.isOpen()) {
+           return;
         }
+
+        //对于连接事件  给bosser
+        if(type == SelectionKey.OP_ACCEPT){
+            selectableChannel.register(chooseBosserSelector(), type);
+            return;
+        }
+
+        //对于读写事件
+        selectableChannel.register(chooseWorkerSelector(),type);
     }
 
     /**
@@ -78,8 +114,30 @@ public class Worker implements Runnable{
 
     }
 
-    protected Selector chooseSelector(){
-        return selector;
+    /**
+     * choose  selector
+     * @return
+     */
+    protected Selector chooseWorkerSelector(){
+
+        int cU= count.addAndGet(1);
+        Worker[] t=workers;
+        int workL=cU%t.length;
+        Worker worker=t[workL];
+        return  worker.selector;
+
+    }
+
+    protected Selector chooseBosserSelector(){
+
+
+        int cU = count.addAndGet(1);
+        Worker[] t = isExistsBosser ? bossers : workers;
+        int workL = cU % t.length;
+        Worker worker = t[workL];
+        return worker.selector;
+
+
     }
 
     protected void wakeUp(){
@@ -170,12 +228,14 @@ public class Worker implements Runnable{
 
                         if (next.isReadable()) {
 
+
                             SocketChannel channelRead = (SocketChannel) channel;
                             instance.read(channelRead, next, this);
-                            registerEvent(channelRead,SelectionKey.OP_READ);
+
 
 
                         }else if(next.isAcceptable()){
+
 
                             ServerSocketChannel connectChannel  = (ServerSocketChannel)channel;
                             SocketChannel accept = connectChannel.accept();
