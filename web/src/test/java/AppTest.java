@@ -1,12 +1,9 @@
-import com.pps.web.WebServer;
-import com.pps.web.data.Application__multipart_form_dataHttpBodyResolve;
+import com.pps.base.PpsBoot;
+import com.pps.web.HttpServer;
 import com.pps.web.data.HttpRequest;
-import com.pps.web.data.Response;
+import com.pps.web.data.HttpResponse;
 import com.pps.web.servlet.model.HttpServlet;
 import com.pps.web.servlet.model.PpsHttpServlet;
-
-import java.io.InputStream;
-import java.util.List;
 
 /**
  * @author Pu PanSheng, 2021/12/20
@@ -18,7 +15,7 @@ public class AppTest {
 
         HttpServlet httpServlet=new PpsHttpServlet() {
             @Override
-            public void get(HttpRequest request, Response response) {
+            public void get(HttpRequest request, HttpResponse response) {
 
                // System.out.println(Thread.currentThread().getId()+":  thread");
                 String s="Hello  PPS!";
@@ -27,7 +24,7 @@ public class AppTest {
 
             }
         };
-        WebServer webServer=new WebServer();
+        HttpServer webServer=new HttpServer();
         webServer.setPort(9090);
         webServer.setBossSize(1);
         webServer.setWorkerSize(2);
@@ -43,7 +40,10 @@ public class AppTest {
         webServer.addHttpServer("/qps", httpServlet);
 
 
-        webServer.start();
+        PpsBoot.run(webServer);
+
+
+
     }
 
 

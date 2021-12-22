@@ -2,7 +2,7 @@
 package com.pps.web.servlet.defualt;
 
 import com.pps.web.data.HttpRequest;
-import com.pps.web.data.Response;
+import com.pps.web.data.HttpResponse;
 import com.pps.web.servlet.model.PpsHttpServlet;
 
 /**
@@ -13,7 +13,7 @@ import com.pps.web.servlet.model.PpsHttpServlet;
 public class DefaultNoMappingServlet extends PpsHttpServlet {
 
         @Override
-        public void get(HttpRequest request, Response response) {
+        public void get(HttpRequest request, HttpResponse response) {
             response.setCode(404);
             response.writeDirect("<h1>PPS-WEB-SERVER:</h1><div>url no mapping!</div>");
     }

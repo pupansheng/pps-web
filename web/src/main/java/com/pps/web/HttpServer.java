@@ -1,16 +1,14 @@
 
 package com.pps.web;
 
+import com.pps.base.Server;
 import com.pps.web.constant.PpsWebConstant;
 import com.pps.web.servlet.defualt.DefaultErrorServlet;
 import com.pps.web.servlet.defualt.DefaultIconServet;
 import com.pps.web.servlet.defualt.DefaultNoMappingServlet;
 import com.pps.web.servlet.defualt.DefaultStaticResourceServlet;
 import com.pps.web.servlet.model.HttpServlet;
-import com.pps.web.servlet.model.PpsHttpServlet;
 
-import java.nio.channels.ServerSocketChannel;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +16,7 @@ import java.util.Map;
  * @author Pu PanSheng, 2021/12/17
  * @version OPRA v1.0
  */
-public class WebServer {
+public class HttpServer implements Server {
 
 
     private int port=9090;
@@ -29,7 +27,7 @@ public class WebServer {
 
     private Map<String,Object> serverParms=new HashMap<>();
 
-    public WebServer() {
+    public HttpServer() {
 
 
        serverParms.put(PpsWebConstant.PORT_KEY,9090);
@@ -61,21 +59,45 @@ public class WebServer {
 
     }
 
-    public Map<String, Object> getServerParms() {
-        return Collections.unmodifiableMap(serverParms);
+    @Override
+    public int getPort() {
+        return port;
+    }
+    @Override
+    public int getWorkerSize() {
+        return (Integer) serverParms.get(PpsWebConstant.WORKER_SIZE_KEY);
     }
 
-    public  <T>  T  getServerParams(String key, Class<T> type){
-
-        Object o = serverParms.get(key);
-        if(o!=null){
-            if(o.getClass()==type){
-                return (T)type;
-            }
-        }
-        return null;
+    @Override
+    public int getBosserSize(){
+        return (Integer) serverParms.get(PpsWebConstant.BOSSER_SIZE_KEY);
     }
 
+    @Override
+    public String support() {
+        return "http";
+    }
+
+    @Override
+    public void init() {
+
+
+        addDefaultServlet();
+
+        initServlet();
+
+    }
+
+
+    @Override
+    public Map<String, Object> getServerParams() {
+        return serverParms;
+    }
+
+
+    public void setWorkerSize(int workerSize) {
+        serverParms.put(PpsWebConstant.WORKER_SIZE_KEY, workerSize);
+    }
     /**
      * 设置压缩开关
      * @param st
@@ -91,7 +113,7 @@ public class WebServer {
      */
     public void addHttpServer(String mapUrl,HttpServlet httpServlet){
 
-        httpServlet.init(getServerParms());
+        httpServlet.init(getServerParams());
         if(!mapUrl.startsWith("/")){
             mapUrl="/"+mapUrl;
         }
@@ -105,6 +127,8 @@ public class WebServer {
     public void setStaticResourceDir(String dir){
         serverParms.put(PpsWebConstant.RESOUCE_DIR_KEY,dir);
     }
+
+
     public void setResourceMapping(String resource){
 
         if(context.equals("/")){
@@ -121,9 +145,7 @@ public class WebServer {
 
 
     }
-    public int getPort() {
-        return port;
-    }
+
 
     public void setPort(int port) {
 
@@ -142,21 +164,16 @@ public class WebServer {
         serverParms.put(PpsWebConstant.CONTEXT_KEY, context);
         this.context = context;
     }
-    public int getWorkerSize() {
-        return (Integer) serverParms.get(PpsWebConstant.WORKER_SIZE_KEY);
-    }
-    public void setWorkerSize(int workerSize) {
-        serverParms.put(PpsWebConstant.WORKER_SIZE_KEY, workerSize);
-    }
-    public int getBosserSize(){
-        return (Integer) serverParms.get(PpsWebConstant.BOSSER_SIZE_KEY);
-    }
+
+
     public void setBossSize(int bosserSize){
         serverParms.put(PpsWebConstant.BOSSER_SIZE_KEY,bosserSize);
     }
+
     public void setParam(String k,Object v){
         serverParms.put(k,v);
     }
+
     public void setMaxThread(int max){
         serverParms.put(PpsWebConstant.MAX_THREAD_KEY,max);
     }
@@ -195,40 +212,14 @@ public class WebServer {
 
 
         mappingServlet.forEach((k,s)->{
-            s.init(getServerParms());
+            s.init(getServerParams());
         });
 
     }
 
 
 
-    public void start(){
 
-        WorkerPool workerPool=null;
-        workerPool= new WorkerPool(getWorkerSize(),getBosserSize(), (Integer) serverParms.get(PpsWebConstant.MAX_THREAD_KEY));
-
-        try {
-
-            addDefaultServlet();
-
-            initServlet();
-
-            workerPool.startWeb(ServerSocketChannel.class, this);
-            System.out.println("[PPS-WEB 服务器]启动成功  PORT:"+ getPort());
-        } catch (Exception e) {
-          e.printStackTrace();
-          throw new RuntimeException("[PPS-WEB 服务器]启动失败  PORT:"+ getPort());
-        }
-
-    }
-
-
-
-    public static void main(String args[]){
-
-
-
-    }
 
 
 }

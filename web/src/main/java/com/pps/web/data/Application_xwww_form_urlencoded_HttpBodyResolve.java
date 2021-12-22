@@ -3,7 +3,7 @@ package com.pps.web.data;
 
 import com.pps.web.constant.ContentTypeEnum;
 import com.pps.web.constant.PpsWebConstant;
-import com.pps.web.util.BufferUtil;
+import com.pps.base.util.BufferUtil;
 
 import java.io.InputStream;
 import java.net.URLDecoder;

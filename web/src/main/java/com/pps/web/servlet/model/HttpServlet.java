@@ -3,7 +3,7 @@ package com.pps.web.servlet.model;
 
 
 import com.pps.web.data.HttpRequest;
-import com.pps.web.data.Response;
+import com.pps.web.data.HttpResponse;
 
 import java.util.Map;
 
@@ -20,7 +20,7 @@ public interface HttpServlet {
         return false;
     }
 
-    void get(HttpRequest request, Response response);
+    void get(HttpRequest request, HttpResponse response);
 
     default int sort() {
         return -100000000;

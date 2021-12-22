@@ -4,8 +4,8 @@
  */
 package com.pps.web.servlet.entity;
 
-import com.pps.web.exception.ChannelCloseException;
-import com.pps.web.util.BufferUtil;
+import com.pps.base.exception.ChannelCloseException;
+import com.pps.base.util.BufferUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +31,13 @@ public class PpsInputSteram extends InputStream {
         byteBuffer=BufferUtil.getBuffer();
     }
 
+    public SocketChannel getSocketChannel() {
+        return socketChannel;
+    }
+
+    public SelectionKey getSelectionKey() {
+        return selectionKey;
+    }
 
     public void returnBuffer(){
         BufferUtil.returnBuffer(byteBuffer);

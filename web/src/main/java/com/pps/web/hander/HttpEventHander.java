@@ -1,14 +1,13 @@
-/*
- * Copyright (c) ACCA Corp.
- * All Rights Reserved.
- */
+
 package com.pps.web.hander;
 
-import com.pps.web.WebServer;
-import com.pps.web.Worker;
+import com.pps.base.EventHander;
+import com.pps.base.Server;
+import com.pps.base.Worker;
+import com.pps.base.exception.ChannelCloseException;
+import com.pps.web.HttpServer;
 import com.pps.web.constant.PpsWebConstant;
 import com.pps.web.data.*;
-import com.pps.web.exception.ChannelCloseException;
 import com.pps.web.servlet.entity.PpsInputSteram;
 import com.pps.web.servlet.model.HttpServlet;
 
@@ -24,70 +23,56 @@ import java.util.ServiceLoader;
  * @author Pu PanSheng, 2021/12/17
  * @version OPRA v1.0
  */
-public class EventHander {
+public class HttpEventHander implements EventHander {
 
-
-    private static volatile EventHander eventHander;
 
     Map<String, HttpServlet> mappingServlet;
 
     private HttpServlet defualtServlet;
     private HttpServlet errorServlet;
     private HttpServlet resourceServlet;
-    private WebServer webServer;
+    private Server webServer;
     /**
      * 拦截全部请求的servlet  maping 固定为  \*
      */
     private HttpServlet allServlet;
-    private EventHander(){
+    public HttpEventHander(){
+
 
     }
-    public static EventHander getInstance(WebServer webServer){
+    @Override
+    public void init(Server server) {
 
-        if(eventHander==null){
+        this.webServer=server;
+        Map<String, HttpServlet> mappingServlet = ((HttpServer)webServer).getMappingServlet();
+        this.mappingServlet= mappingServlet;
+        defualtServlet= mappingServlet.get(PpsWebConstant.DEFAULT_SERVLET);
+        errorServlet= mappingServlet.get(PpsWebConstant.ERROR_SERVLET);
+        resourceServlet= mappingServlet.get(PpsWebConstant.RESOURCE_SERVLET);
+        allServlet= mappingServlet.get(PpsWebConstant.MATCH_MAPPING_ALL_URL);
+        ServiceLoader<HttpBodyResolve> load = ServiceLoader.load(HttpBodyResolve.class);
+        load.forEach(s->{
+            s.init(webServer.getServerParams());
+            HttpAlgoFactory.putHttpBodyResolveAlgo(s);
+        });
+        ServiceLoader<ContentEncoding> code = ServiceLoader.load(ContentEncoding.class);
+        code.forEach(c->{
+            c.init(webServer.getServerParams());
+            HttpAlgoFactory.putContentEncodingAlgo(c);
+        });
 
-              synchronized (EventHander.class){
-
-                  if(eventHander==null){
-
-                      Map<String, HttpServlet> mappingServlet = webServer.getMappingServlet();
-                      eventHander=new EventHander();
-                      eventHander.mappingServlet= mappingServlet;
-                      eventHander.defualtServlet= mappingServlet.get(PpsWebConstant.DEFAULT_SERVLET);
-                      eventHander.errorServlet= mappingServlet.get(PpsWebConstant.ERROR_SERVLET);
-                      eventHander.resourceServlet= mappingServlet.get(PpsWebConstant.RESOURCE_SERVLET);
-                      eventHander.allServlet= mappingServlet.get(PpsWebConstant.MATCH_MAPPING_ALL_URL);
-                      eventHander.webServer=webServer;
-                      ServiceLoader<HttpBodyResolve> load = ServiceLoader.load(HttpBodyResolve.class);
-
-                      load.forEach(s->{
-                          s.init(webServer.getServerParms());
-                          HttpAlgoFactory.putHttpBodyResolveAlgo(s);
-                      });
-
-                      ServiceLoader<ContentEncoding> code = ServiceLoader.load(ContentEncoding.class);
-                      code.forEach(c->{
-                          c.init(webServer.getServerParms());
-                          HttpAlgoFactory.putContentEncodingAlgo(c);
-                      });
-
-
-                  }
-              }
-        }
-        return eventHander;
     }
 
 
+    @Override
+    public void read(PpsInputSteram ppsInputSteram,Worker worker) {
 
-    public void read(SocketChannel socketChannel, SelectionKey selectionKey, Worker worker) throws IOException {
 
-
-        Response response=null;
+        SelectionKey selectionKey = ppsInputSteram.getSelectionKey();
+        SocketChannel socketChannel = ppsInputSteram.getSocketChannel();
+        HttpResponse response=null;
         try {
 
-
-            PpsInputSteram ppsInputSteram=new PpsInputSteram(socketChannel,selectionKey);
             HttpRequest request= null;
             request = new HttpRequest(ppsInputSteram, worker);
             /**
@@ -106,7 +91,7 @@ public class EventHander {
 
 
 
-                response=new Response(socketChannel,webServer.getServerParms());
+                response=new HttpResponse(socketChannel, webServer.getServerParams());
                 response.setRequestHeader(request.getHeaderParam());
 
                 String matchUrl=request.getUrl();
@@ -184,12 +169,19 @@ public class EventHander {
                 e.printStackTrace();
             }
             selectionKey.cancel();
-            socketChannel.close();
+            try {
+                socketChannel.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
 
     }
 
-
+    @Override
+    public String support() {
+        return "http";
+    }
 
 
 }

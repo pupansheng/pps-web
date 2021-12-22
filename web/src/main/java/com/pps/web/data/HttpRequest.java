@@ -1,7 +1,7 @@
 
 package com.pps.web.data;
 
-import com.pps.web.Worker;
+import com.pps.base.Worker;
 import com.pps.web.constant.PpsWebConstant;
 import com.pps.web.servlet.entity.PpsInputSteram;
 

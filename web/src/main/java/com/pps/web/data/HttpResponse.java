@@ -1,10 +1,10 @@
 
 package com.pps.web.data;
 
-import com.pps.web.WebServer;
+
 import com.pps.web.constant.PpsWebConstant;
-import com.pps.web.exception.ChannelCloseException;
-import com.pps.web.util.BufferUtil;
+import com.pps.base.exception.ChannelCloseException;
+import com.pps.base.util.BufferUtil;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -17,7 +17,7 @@ import java.util.Set;
  * @author Pu PanSheng, 2021/12/18
  * @version OPRA v1.0
  */
-public class Response {
+public class HttpResponse {
 
     private SocketChannel socketChannel;
     private String protocol="HTTP/1.1";
@@ -53,7 +53,7 @@ public class Response {
     private Map<String, Object> serverParam;
 
 
-    public Response(SocketChannel socketChannel,Map<String, Object> serverParam) {
+    public HttpResponse(SocketChannel socketChannel,Map<String, Object> serverParam) {
 
         this.serverParam=serverParam;
         this.socketChannel = socketChannel;

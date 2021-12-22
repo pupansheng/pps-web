@@ -4,7 +4,7 @@ package com.pps.web.servlet.defualt;
 import com.pps.web.constant.ContentTypeEnum;
 import com.pps.web.constant.PpsWebConstant;
 import com.pps.web.data.HttpRequest;
-import com.pps.web.data.Response;
+import com.pps.web.data.HttpResponse;
 import com.pps.web.servlet.model.PpsHttpServlet;
 
 import java.io.File;
@@ -58,7 +58,7 @@ public class DefaultStaticResourceServlet  extends PpsHttpServlet {
     }
 
     @Override
-    public void get(HttpRequest request, Response response) {
+    public void get(HttpRequest request, HttpResponse response) {
 
         String url = request.getUrl();
         String u = resource.get(url);

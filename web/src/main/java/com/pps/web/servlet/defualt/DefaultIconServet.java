@@ -1,11 +1,12 @@
 
 package com.pps.web.servlet.defualt;
 
-import com.pps.web.WebServer;
+
+import com.pps.base.Server;
 import com.pps.web.constant.ContentTypeEnum;
 import com.pps.web.constant.PpsWebConstant;
 import com.pps.web.data.HttpRequest;
-import com.pps.web.data.Response;
+import com.pps.web.data.HttpResponse;
 import com.pps.web.servlet.model.PpsHttpServlet;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class DefaultIconServet  extends PpsHttpServlet {
 
 
     @Override
-    public void get(HttpRequest request, Response response) {
+    public void get(HttpRequest request, HttpResponse response) {
         String o = (String) serverParams.get(PpsWebConstant.ICON_LOCATION);
         byte[] bytes=new byte[0];
         if(o!=null){
@@ -34,7 +35,7 @@ public class DefaultIconServet  extends PpsHttpServlet {
                 e.printStackTrace();
             }
         }else {
-            URL resource = WebServer.class.getClassLoader().getResource("resource/icon.png");
+            URL resource = Server.class.getClassLoader().getResource("resource/icon.png");
             if (resource != null) {
                 response.setContentType(ContentTypeEnum.imagexicon.getType());
                 try {

@@ -1,9 +1,9 @@
 
-package com.pps.web;
+package com.pps.base;
 
 
 import com.pps.web.constant.PpsWebConstant;
-import com.pps.web.hander.EventHander;
+import com.pps.web.servlet.entity.PpsInputSteram;
 
 import java.io.IOException;
 import java.nio.channels.*;
@@ -43,7 +43,7 @@ public class Worker implements Runnable{
 
 
 
-    private WebServer webServer;
+    private Server server;
 
 
     public Worker(Executor executor){
@@ -58,8 +58,8 @@ public class Worker implements Runnable{
         }
     }
 
-    void init(WebServer webServer,Worker[] workers, Worker[] bossers) {
-        this.webServer=webServer;
+    void init(Server server, Worker[] workers, Worker[] bossers) {
+        this.server=server;
         this.workers=workers;
         this.bossers=bossers;
         if(this.bossers!=null){
@@ -148,7 +148,7 @@ public class Worker implements Runnable{
     public void run() {
 
 
-        EventHander instance = EventHander.getInstance(webServer);
+        EventHander instance = EventHanderFactory.getEventHander(server.support());
 
         int count=0;
         long startTime=System.nanoTime();
@@ -230,7 +230,8 @@ public class Worker implements Runnable{
 
 
                             SocketChannel channelRead = (SocketChannel) channel;
-                            instance.read(channelRead, next, this);
+                            PpsInputSteram ppsInputSteram=new PpsInputSteram(channelRead,next);
+                            instance.read(ppsInputSteram,this);
 
 
 

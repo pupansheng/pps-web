@@ -1,6 +1,7 @@
 
-package com.pps.web;
+package com.pps.base;
 
+import com.pps.base.util.BufferUtil;
 import com.pps.web.constant.PpsWebConstant;
 
 import java.net.InetSocketAddress;
@@ -8,7 +9,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -19,6 +20,7 @@ public class WorkerPool {
 
 
     private int bossSize;
+
     private int maxThread;
     /**
      * 负责监听读写事件
@@ -31,10 +33,17 @@ public class WorkerPool {
 
     private ThreadPoolExecutor executor;
 
+    private Server server;
+
     private volatile boolean onStart=false;
 
-    public WorkerPool(int workerSize,int bossSize,int maxThread){
-
+    public WorkerPool(Server server){
+        int workerSize=server.getWorkerSize();
+        int bossSize=server.getBosserSize();
+        int maxThread=server.getMaxThread();
+        int keepAliveTime=server.keepAliveTimeBySECONDS();
+        BlockingQueue blockingQueue=server.getBlockQeque();
+        this.server=server;
         if(bossSize<0||workerSize<=0){
             throw new RuntimeException("参数不合法！");
         }
@@ -44,8 +53,7 @@ public class WorkerPool {
             this.maxThread=workerSize+bossSize;
         }
         executor = new ThreadPoolExecutor(workerSize+bossSize, this.maxThread,
-                60, TimeUnit.SECONDS, new ArrayBlockingQueue<>( 100));
-
+                keepAliveTime, TimeUnit.SECONDS, blockingQueue);
         this.workers=new Worker[workerSize];
         for (int i = 0; i < workerSize; i++) {
             workers[i] = new Worker(executor);
@@ -59,24 +67,30 @@ public class WorkerPool {
 
     }
 
-    public void startWeb(Class chanelClass,WebServer webServer) throws Exception {
+    public void start() throws Exception {
+
+
+        server.init();
+
+        EventHanderFactory.initEventHander(server);
 
         ServerSocketChannel serverSocketChannel=null;
 
-        if(chanelClass==ServerSocketChannel.class){
+        Class listenerChannel = server.getListenerChannel();
 
+
+        if(listenerChannel ==ServerSocketChannel.class){
             serverSocketChannel=ServerSocketChannel.open();
-            serverSocketChannel.socket().bind(new InetSocketAddress((webServer.getPort())));
+            serverSocketChannel.socket().bind(new InetSocketAddress((server.getPort())));
             serverSocketChannel.configureBlocking(false);
-
         }
 
         if(serverSocketChannel==null){
-            throw new RuntimeException(chanelClass+ "暂未支持！");
+            throw new RuntimeException(listenerChannel + "暂未支持！");
         }
 
         //零时目录创建
-        String tempDir = (String)webServer.getServerParms().get(PpsWebConstant.TEMP_DIR_KEY);
+        String tempDir = (String)server.getServerParams().get(PpsWebConstant.TEMP_DIR_KEY);
         if(!Files.exists(Paths.get(tempDir))){
             Files.createDirectories(Paths.get(tempDir));
         }
@@ -85,16 +99,19 @@ public class WorkerPool {
         Worker W=workers[0];
 
         if(!onStart) {
+
             for (Worker worker : workers) {
-                worker.init(webServer, workers, bossers);
+                worker.init(server, workers, bossers);
                 executor.execute(worker);
             }
             if (bossSize != 0) {
                 for (Worker bosser : bossers) {
-                    bosser.init(webServer, workers, bossers);
+                    bosser.init(server, workers, bossers);
                     executor.execute(bosser);
                 }
             }
+
+            BufferUtil.initBufferPool();
 
             W.registerEvent(serverSocketChannel, SelectionKey.OP_ACCEPT);
 

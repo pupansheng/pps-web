@@ -1,8 +1,6 @@
-
-
 import com.pps.web.data.Application__multipart_form_dataHttpBodyResolve;
 import com.pps.web.data.HttpRequest;
-import com.pps.web.data.Response;
+import com.pps.web.data.HttpResponse;
 import com.pps.web.servlet.model.PpsHttpServlet;
 
 import java.io.InputStream;
@@ -14,7 +12,7 @@ import java.util.List;
  */
 public class UploadServlet extends PpsHttpServlet {
     @Override
-    public void get(HttpRequest request, Response response) {
+    public void get(HttpRequest request, HttpResponse response) {
 
 
         List<Application__multipart_form_dataHttpBodyResolve.FileEntity> fromData = request.getFromData();

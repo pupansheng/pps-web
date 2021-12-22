@@ -1,12 +1,8 @@
 
-package com.pps.web.util;
+package com.pps.base.util;
 
-import com.pps.web.constant.PpsWebConstant;
-
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -19,19 +15,48 @@ public class BufferUtil {
 
     private static ByteBuffer[] pool;
     private static AtomicBoolean[] status;
-    private static int initSize=PpsWebConstant.BUFFER_INIT_LENGTH;
+    private static int initSize=1024;
+    private static int bufferSize;
+    private static String defaultChaset="utf-8";
     static {
        int cpu =Runtime.getRuntime().availableProcessors();
-       pool=new ByteBuffer[cpu];
-       status=new AtomicBoolean[cpu];
+       bufferSize=cpu;
+    }
+
+    public static void setBufferInitSize(int size){
+        initSize=size;
+    }
+    public static void setBufferSize(int size){
+        bufferSize=size;
+    }
+    public static void setDefaultChaset(String charset){
+        defaultChaset=charset;
+    }
+
+    public static void initBufferPool(){
+        pool=new ByteBuffer[bufferSize];
+        status=new AtomicBoolean[bufferSize];
         for (int i = 0; i < status.length; i++) {
             status[i]=new AtomicBoolean(false);
         }
     }
+    public static void clearBufferPool(){
+
+        if(pool==null){
+            return;
+        }
+        for (int i = 0; i < pool.length; i++) {
+            if(!status[i].get()){
+                pool[i]=null;
+                status[i]=null;
+            }
+        }
+
+    }
 
     public static byte[] strToBytes(String c) {
         try {
-            return c.getBytes(PpsWebConstant.CHAR_SET);
+            return c.getBytes(defaultChaset);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -48,7 +73,7 @@ public class BufferUtil {
 
     public static String byteToStr(byte[] c) {
         try {
-            return new String(c, PpsWebConstant.CHAR_SET);
+            return new String(c, defaultChaset);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -75,8 +100,10 @@ public class BufferUtil {
 
         for (int i = 0; i < pool.length; i++) {
             if(pool[i]==byteBuffer&&status[i].get()){
+
                 byteBuffer.clear();
                 status[i].getAndSet(false);
+
                 break;
             }
         }
@@ -126,18 +153,6 @@ public class BufferUtil {
         BufferUtil.returnBuffer(buffer);
     }
 
-    public static byte[] readAll(SocketChannel socketChannel) throws IOException {
-
-
-        ByteBuffer byteBuffer = ByteBuffer.allocate(10 * 1024 * 1024);
-        byteBuffer.clear();
-        int read = socketChannel.read(byteBuffer);
-        byteBuffer.flip();
-        byte[] bytes=new byte[read];
-        byteBuffer.get(bytes);
-        return bytes;
-
-    }
 
     public static byte[] listToArray(List<byte[]> data){
 
