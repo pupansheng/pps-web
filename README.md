@@ -22,7 +22,7 @@ public class AppTest {
        
                    }
                };
-               Server webServer=new HttpServer();
+               HttpServer webServer=new HttpServer();
                webServer.setPort(9090);
                webServer.setBossSize(1);
                webServer.setWorkerSize(2);
